@@ -4,7 +4,7 @@ import { Prisma, User} from "@prisma/client";
 
 
 
-function findUserbyEmail( email :string) {
+export function findUserbyEmail( email :string) {
 
   return prisma.user.findUnique({
     where : {
@@ -13,7 +13,7 @@ function findUserbyEmail( email :string) {
   });
 }
 
-function createUserByEmailAndPassword(user : User) {
+export function createUserByEmailAndPassword(user) {
 
   user.password = bcrypt.hashSync(user.password,12);
   return  prisma.user.create({
@@ -21,7 +21,7 @@ function createUserByEmailAndPassword(user : User) {
   });
 }
 
-function findUserById(id : string) {
+export function findUserById(id : string) {
 
   return  prisma.user.findUnique({
     where : {

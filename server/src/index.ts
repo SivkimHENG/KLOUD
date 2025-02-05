@@ -45,5 +45,5 @@ app.listen(port, () => {
 });
 
 
-app.use(authRouter);
+app.use("/auth",authRouter);
 

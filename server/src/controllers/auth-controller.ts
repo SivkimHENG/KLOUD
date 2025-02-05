@@ -1,68 +1,127 @@
-import {Request , Response } from "express";
+import {NextFunction, Request , Response } from "express";
 import prisma from "../database";
-import { clearToken, generateToken } from "../utils/auth";
 import hashToken from "../utils/hashToken";
+import { createUserByEmailAndPassword, findUserbyEmail, findUserById } from "./user-controller";
+import { generateAccessToken, generateTokens } from "../utils/jwt";
+import bcrypt from "bcrypt";
 
 
 
-export async function registerUser(req : Request, res : Response) { 
+export async function registerUser(req : Request, res : Response, next : NextFunction ) { 
 
 
-  const { username , email, password } =  req.body;
-  const userExist = await prisma.user.findUnique({ email : req.body.email });
-    
-  if(userExist) {
-    res.status(400).json({ message : "User have already exist"});
+  try {
+  const {email, password } =  req.body;
+  if(!email || !password ) {
+    res.status(400)
+    throw new Error ("You must provide Email and Password !!")
+  }
+  const existUser = await findUserbyEmail(email);
+  if(existUser) {
+    res.status(400)
+    throw new Error ("The Email has already taken ")
   }
 
+    const user = await createUserByEmailAndPassword({ email, password });
+    const { accessToken, refreshToken } = generateTokens(user);
+    await addRefreshTokenToWhitelist({ refreshToken, userId: user.id });
 
-  const user = await prisma.user.create({
-    data : {
-      username , email, password
-    }
-  });
+    res.json(
+      {
+        accessToken,
+        refreshToken,
+      }
+    );
 
-
-  if (user) {
-    generateToken(res,user.id);
-    res.json(201).json({
-      id : user.id,
-      username : user.username,
-      email : user.email,
-    });
-  } else {
-    res.status(400).json({ message : "An error occured in creating new user"})
+  } catch (error) {
+    next(error);
   }
+
 
 }
 
-export async function authenticateUser(req : Request, res : Response) { 
+export async function authenticateUser(req : Request, res : Response, next : NextFunction) { 
 
   const { email, password } = req.body;
-  const user = await prisma.user.findUnique({email});
+  try {
+  const {email, password } =  req.body;
+  if(!email || !password ) {
+    res.status(400)
+    throw new Error ("You must provide Email and Password !!")
+  }
+  const existUser = await findUserbyEmail(email) ;
+  if(!existUser) {
+    res.status(400)
+    throw new Error ("Credential incorrect")
+  }
 
-  if (user && (await user.comparePassword(password))) {
-    generateToken(res, user.id);
-    res.status(201).json({
-      id: user.id,
-      username: user.username,
-      email: user.email
-    });
-  } else {
-    res.status(401).json({ message: "User not found / password incorrect" })
+  const validPassword = await bcrypt.compare(password,existUser?.password);
+
+  if (!validPassword) {
+    res.status(403)
+    throw new Error ("Credential incorrect");
+  }
+
+  const { accessToken, refreshToken} = generateTokens(existUser);
+  await addRefreshTokenToWhitelist({refreshToken, userId : existUser.id})
+
+    res.json({
+      accessToken,
+      refreshToken
+    })
+  } catch (error) {
+    next(error);
   }
 
 }
 
 export function logoutUser(req : Request, res : Response) {
 
-  clearToken(res);
-  res.json(201).json({message : "User logged out "})
+
+
+
+
+
 
  }
 
+export async function refreshTokenUser(req : Request, res : Response, next : NextFunction ) {
 
-function addRefreshTokenToWhitelist({ refreshToken  , userId}) {
+
+
+  try{
+    const { refreshToken } = req.body
+
+    if(!refreshToken) {
+      res.status(400)
+      throw new Error("Missing the refresh token");
+    }
+
+    const savedFreshToken = await findRefreshToken(refreshToken);
+
+
+    if (!savedFreshToken ||
+      savedFreshToken.revoked === true ||
+      Date.now() >= savedFreshToken.expireAt.getTime()) {
+        res.status(400);
+        throw new Error ("Unauthorized");
+    }
+
+
+  } catch (error) {
+    next(error);
+  }
+
+
+
+
+
+
+}
+
+
+
+function addRefreshTokenToWhitelist({ refreshToken, userId}) {
   return prisma.refreshToken.create ({
     data : {
 
@@ -84,4 +143,33 @@ function findRefreshToken(token : string) {
 
     },
   });
+}
+
+function deletefreshTokenById(id : string) {
+  return prisma.refreshToken.update({
+    where : {
+      id
+
+    },
+    data : {
+      revoked : true
+    },
+
+  });
+
+}
+
+function revokeTokens(userId : string) {
+
+  return prisma.refreshToken.updateMany({
+    where : {
+      userId,
+    },
+    data : {
+      revoked : true
+    },
+
+  });
+
+
 }
