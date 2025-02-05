@@ -24,5 +24,13 @@ model User {
 model RefreshToken {
   id String @id @unique @default(uuid())
   hashedToken String @unique
+  userId String
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expireAt DateTime
+
+
 
 }

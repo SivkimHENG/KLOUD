@@ -1,6 +1,7 @@
 import {Request , Response } from "express";
 import prisma from "../database";
 import { clearToken, generateToken } from "../utils/auth";
+import hashToken from "../utils/hashToken";
 
 
 
@@ -61,3 +62,26 @@ export function logoutUser(req : Request, res : Response) {
  }
 
 
+function addRefreshTokenToWhitelist({ refreshToken  , userId}) {
+  return prisma.refreshToken.create ({
+    data : {
+
+      hashedToken : hashToken(refreshToken),
+      userId,
+      expireAt : new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+    },
+
+  });
+}
+
+
+
+function findRefreshToken(token : string) {
+
+  return prisma.refreshToken.findUnique({
+    where : {
+      hashedToken : hashToken(token),
+
+    },
+  });
+}
