@@ -76,16 +76,6 @@ export async function authenticateUser(req : Request, res : Response, next : Nex
 
 }
 
-export function logoutUser(req : Request, res : Response) {
-
-
-
-
-
-
-
- }
-
 export async function refreshTokenUser(req : Request, res : Response, next : NextFunction ) {
 
   try{
@@ -126,11 +116,12 @@ export async function revokefreshToken(req : Request, res : Response , next : Ne
   }
 }
 
+interface RefreshTokenInput {
+  refreshToken: string;
+  userId: string;
+}
 
-
-
-
-function addRefreshTokenToWhitelist({ refreshToken, userId}) {
+function addRefreshTokenToWhitelist ({ refreshToken, userId} : RefreshTokenInput) {
   return prisma.refreshToken.create ({
     data : {
 

@@ -24,7 +24,6 @@ export function isAuthentication(req : Request, res : Response, next : NextFunct
     throw new Error ("Unauthorization");
 
   }
-
   return next();
 
 }

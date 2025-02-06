@@ -1,4 +1,9 @@
-import { authenticateUser, logoutUser, registerUser } from "../controllers/auth-controller";
+import { 
+    authenticateUser,
+    logoutUser,
+    registerUser ,
+refreshTokenUser
+} from "../controllers/auth-controller";
 import express from "express";
 
 
@@ -8,7 +13,6 @@ import express from "express";
 router.get("/register", registerUser);
 router.get("/login", authenticateUser);
 router.get("/logout", logoutUser);
-
 
 
 router.post("/refreshtoken", refreshTokenUser );
