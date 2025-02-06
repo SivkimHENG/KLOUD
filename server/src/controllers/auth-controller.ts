@@ -4,6 +4,7 @@ import hashToken from "../utils/hashToken";
 import { createUserByEmailAndPassword, findUserbyEmail, findUserById } from "./user-controller";
 import { generateAccessToken, generateTokens } from "../utils/jwt";
 import bcrypt from "bcrypt";
+import { hasUncaughtExceptionCaptureCallback } from "process";
 
 
 
@@ -87,8 +88,6 @@ export function logoutUser(req : Request, res : Response) {
 
 export async function refreshTokenUser(req : Request, res : Response, next : NextFunction ) {
 
-
-
   try{
     const { refreshToken } = req.body
 
@@ -103,21 +102,31 @@ export async function refreshTokenUser(req : Request, res : Response, next : Nex
     if (!savedFreshToken ||
       savedFreshToken.revoked === true ||
       Date.now() >= savedFreshToken.expireAt.getTime()) {
-        res.status(400);
-        throw new Error ("Unauthorized");
+      res.status(400);
+      throw new Error("Unauthorized");
     }
 
 
   } catch (error) {
     next(error);
   }
-
-
-
-
-
-
 }
+
+export async function revokefreshToken(req : Request, res : Response , next : NextFunction) {
+
+  try {
+    const { userId } = req.body
+    await revokeTokens(userId);
+    res.json({
+      message : `Token revoked for user with id ${userId}`
+    });
+
+  } catch(error)  {
+    next(error);
+  }
+}
+
+
 
 
 
