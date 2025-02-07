@@ -76,6 +76,17 @@ export async function authenticateUser(req : Request, res : Response, next : Nex
 
 }
 
+export async function profileUser(req : Request, res : Response, next : NextFunction) {
+
+  try {
+
+
+  } catch (err) {
+    next(err);
+  }
+
+}
+
 export async function refreshTokenUser(req : Request, res : Response, next : NextFunction ) {
 
   try{
@@ -170,6 +181,5 @@ function revokeTokens(userId : string) {
     },
 
   });
-
-
 }
+

@@ -1,29 +1,33 @@
 import {Request , Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
-export function isAuthentication(req : Request, res : Response, next : NextFunction) {
+interface AuthenticationRequest extends Request {
+  payload : JwtPayload
 
-    const { authorization }  = req.headers.authorization;
+}
 
-  if (!authorization) {
-    res.status(400)
-    throw new Error(" Unauthorization");
+
+export function isAuthentication(req : AuthenticationRequest, res : Response, next : NextFunction)  {
+  const { authorization } = req.headers
+
+  if(!authorization) {
+    throw new Error ("Unauthorization");
   }
 
 
   try {
-    const token = authorization.split(' ')[1];
-    const payload = jwt.verify(token, process.env.SECRET_KEY as string);
-    (req as any).payload = payload;
+    const  token = authorization.split(" ")[1];
+    var payload = jwt.verify(token,process.env.SECRET_KEY as string) as JwtPayload;
+    req.payload = payload;
+    next();
 
   } catch (error) {
-    res.status(401);
-    if(error?.name === "TokenExpireError") {
-      throw new Error (error.name);
-    }
-    throw new Error ("Unauthorization");
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ error: "TokenExpiredError" });
 
+    }
+    return res.status(401).json({ error: "Unauthorization" })
   }
-  return next();
+
 
 }
