@@ -1,10 +1,9 @@
 import {NextFunction, Request , Response } from "express";
-import prisma from "../database";
 import hashToken from "../utils/hashToken";
-import { createUserByEmailAndPassword, findUserbyEmail, findUserById } from "./user-controller";
+import { createUserByEmailAndPassword, findUserById , findUserbyEmail} from "./user-controller";
 import { generateAccessToken, generateTokens } from "../utils/jwt";
 import bcrypt from "bcrypt";
-import { hasUncaughtExceptionCaptureCallback } from "process";
+import prisma from "../utils/database";
 
 
 

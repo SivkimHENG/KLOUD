@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { User } from "@prisma/client";
 
 
-
 export function generateAccessToken(user : User) {
 
   return jwt.sign({ userId: user.id },
